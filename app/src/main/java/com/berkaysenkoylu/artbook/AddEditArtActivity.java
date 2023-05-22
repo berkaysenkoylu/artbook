@@ -15,6 +15,7 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.ImageDecoder;
 import android.net.Uri;
 import android.os.Build;
@@ -24,6 +25,7 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import java.io.ByteArrayOutputStream;
 import java.security.Permission;
 import java.sql.SQLOutput;
 
@@ -32,7 +34,7 @@ public class AddEditArtActivity extends AppCompatActivity {
     private ActivityResultLauncher<String> permissionLauncher;
 
     private ImageView imgShowcase;
-    private String imgUri = "";
+    private byte[] imgBlob;
     private Bitmap imgBitmap;
     private int selectedArtId;
     private boolean isEditMode = false;
@@ -53,9 +55,10 @@ public class AddEditArtActivity extends AppCompatActivity {
         if (isEditMode) {
             Art artToEdit = (Art) intent.getSerializableExtra("Art to edit");
             selectedArtId = artToEdit.id;
-            imgUri = artToEdit.imageUri;
+            imgBlob = artToEdit.imageBlob;
+            imgBitmap = BitmapFactory.decodeByteArray(imgBlob, 0, imgBlob.length);
 
-            imgShowcase.setImageURI(Uri.parse(imgUri));
+            imgShowcase.setImageBitmap(imgBitmap);
             binding.artNameText.setText(artToEdit.artname);
             binding.painterNameText.setText(artToEdit.painterName);
             binding.dateText.setText(artToEdit.year);
@@ -143,27 +146,57 @@ public class AddEditArtActivity extends AppCompatActivity {
         });
     }
 
+    private Bitmap getImgBitmap(Bitmap image, int maxSize) {
+        int width = image.getWidth();
+        int height = image.getHeight();
+
+        float bitmapRatio = (float) width / (float) height;
+
+        if (bitmapRatio > 1) {
+            // Landscape image
+            width = maxSize;
+            height = (int) (width / bitmapRatio);
+        } else {
+            // Portrait image
+            height = maxSize;
+            width = (int) (height * bitmapRatio);
+        }
+
+        return image.createScaledBitmap(image, width, height, true);
+    }
+
     public void onSaveButtonPressed(View view) {
         // Check if any field is empty. If so, show an error.
         String artName = binding.artNameText.getText().toString();
         String painterName = binding.painterNameText.getText().toString();
         String date = binding.dateText.getText().toString();
 
-        if (artName.matches("") || painterName.matches("") || imgUri.matches("") || date.matches("") ){
-            Toast.makeText(this, "Hey this is test", Toast.LENGTH_SHORT).show();
+        byte[] byteArray = new byte[] {};
+
+        if (imgBitmap != null) {
+            Bitmap smallImage = getImgBitmap(imgBitmap, 300);
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            smallImage.compress(Bitmap.CompressFormat.PNG, 50, outputStream);
+            byteArray = outputStream.toByteArray();
+        }
+
+        if (artName.matches("") || painterName.matches("") || byteArray.length == 0 || date.matches("") ){
+            Toast.makeText(this, "You cannot leave any fields empty!", Toast.LENGTH_SHORT).show();
             return;
         }
-        // TODO: Extra verification for input fields can be done.
+        // Extra verification for input fields can be done.
         DBHandler dbHandler = new DBHandler(AddEditArtActivity.this);
 
         if (!isEditMode) {
-            dbHandler.addNewArt(artName, painterName, imgUri, date);
+            dbHandler.addNewArt(artName, painterName, byteArray, date);
         } else {
             // Edit the existing one
-            dbHandler.editArt(selectedArtId, artName, painterName, imgUri, date);
+            dbHandler.editArt(selectedArtId, artName, painterName, byteArray, date);
         }
 
         Intent intent = new Intent(AddEditArtActivity.this, MainActivity.class);
+        // Close other activities
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(intent);
     }
 }

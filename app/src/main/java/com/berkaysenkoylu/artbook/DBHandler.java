@@ -25,20 +25,21 @@ public class DBHandler extends SQLiteOpenHelper {
                 + "'id' INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + "'artname' TEXT,"
                 + "'paintername' TEXT,"
-                + "'imageUri' TEXT,"
+                + "'imageBlob' BLOB,"
                 + "'year' TEXT)";
 
         db.execSQL(query);
     }
 
-    public long addNewArt(String art_name, String painter_name, String img_uri, String year) {
+    public long addNewArt(String art_name, String painter_name, byte[] imgByteArray, String year) {
+        System.out.println("=========== CREATE NEW ART ===========");
         SQLiteDatabase db = this.getWritableDatabase();
 
         ContentValues values = new ContentValues();
 
         values.put("artname", art_name);
         values.put("paintername", painter_name);
-        values.put("imageUri", img_uri);
+        values.put("imageBlob", imgByteArray);
         values.put("year", year);
 
         long id = db.insert(TABLE_NAME, null, values);
@@ -48,14 +49,14 @@ public class DBHandler extends SQLiteOpenHelper {
         return id;
     }
 
-    public void editArt(int artId, String art_name, String painter_name, String img_uri, String year) {
+    public void editArt(int artId, String art_name, String painter_name, byte[] imgByteArray, String year) {
         SQLiteDatabase db = this.getWritableDatabase();
 
         ContentValues values = new ContentValues();
 
         values.put("artname", art_name);
         values.put("paintername", painter_name);
-        values.put("imageUri", img_uri);
+        values.put("imageBlob", imgByteArray);
         values.put("year", year);
 
         db.update(TABLE_NAME, values, "id = " + artId, null);
@@ -82,7 +83,7 @@ public class DBHandler extends SQLiteOpenHelper {
                 artArrayList.add(new Art(cursorArt.getInt(0),
                          cursorArt.getString(1),
                         cursorArt.getString(2),
-                        cursorArt.getString(3),
+                        cursorArt.getBlob(3),
                         cursorArt.getString(4)));
             } while (cursorArt.moveToNext());
 
@@ -101,7 +102,7 @@ public class DBHandler extends SQLiteOpenHelper {
             Art fetchedArt = new Art(cursorArt.getInt(0),
                     cursorArt.getString(1),
                     cursorArt.getString(2),
-                    cursorArt.getString(3),
+                    cursorArt.getBlob(3),
                     cursorArt.getString(4));
             return fetchedArt;
         }

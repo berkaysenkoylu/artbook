@@ -7,13 +7,13 @@ public class Art implements Serializable {
     String artname;
     String painterName;
     String year;
-    String imageUri;
+    byte[] imageBlob;
 
-    public Art(int id, String artname, String painterName, String imageUri, String year) {
+    public Art(int id, String artname, String painterName, byte[] imageBlob, String year) {
         this.id = id;
         this.artname = artname;
         this.painterName = painterName;
-        this.imageUri = imageUri;
+        this.imageBlob = imageBlob;
         this.year = year;
     }
 }

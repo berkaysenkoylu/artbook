@@ -79,8 +79,4 @@ public class ArtAdapter extends RecyclerView.Adapter<ArtAdapter.ArtHolder> {
             this.artRowBinding = binding;
         }
     }
-
-    public void test() {
-
-    }
 }
